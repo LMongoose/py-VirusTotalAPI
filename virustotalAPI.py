@@ -1,4 +1,4 @@
-# Original author: Lucas Soares Pellizzaro on 2018-12-20
+﻿# Original author: Lucas Soares Pellizzaro on 2018-12-20
 
 import urllib3
 urllib3.disable_warnings()
@@ -38,19 +38,20 @@ def getPositives(p_url):
 		"apikey": APIKEY,
 		"resource": p_url
 	}
-	urlrequest = connection.request("POST", url="https://www.virustotal.com/vtapi/v2/url/report", fields=request_params)
+	baseurl = "https://www.virustotal.com/vtapi/v2/url/report"
+	this_request = connection.request("POST", url=baseurl, fields=request_params)
 
 	# Checks the response status and returns output
-	if str(urlrequest.status) == "200":
+	if str(this_request.status) == "200":
 		import json
-		json_raw = urlrequest.data.decode("utf-8")
+		json_raw = this_request.data.decode("utf-8")
 		func_output = {
 			"statuscode": 200,
 			"output": json.loads(json_raw)["positives"]
 		}
 	else:
 		func_output = {
-			"statuscode": urlrequest.status,
-			"output": 0
+			"statuscode": this_request.status,
+			"output": None
 		}
 	return func_output
