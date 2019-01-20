@@ -41,7 +41,6 @@ def startConnection():
 	# Starts the connection
 	import urllib3
 	urllib3.disable_warnings()
-	global _CONNECTION
 	import sys, platform
 	os_architecture = "x86"
 	if(platform.system() == "Windows"):
@@ -55,6 +54,7 @@ def startConnection():
 	sysinfo = pythonversion+" running on "+opsysversion
 	from urllib3 import make_headers
 	headers = make_headers(keep_alive=False, user_agent="Urllib3 module for "+sysinfo)
+	global _CONNECTION
 	if(_PROXYURL != ""):
 		from urllib3 import ProxyManager
 		_CONNECTION = urllib3.ProxyManager(proxy_url=_PROXYURL, headers=headers)
