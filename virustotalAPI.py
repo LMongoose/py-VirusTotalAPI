@@ -42,24 +42,24 @@ def startConnection():
 	import urllib3
 	urllib3.disable_warnings()
 	global _CONNECTION
+	import sys, platform
+	os_architecture = "x86"
+	if(platform.system() == "Windows"):
+		if(sys.platform == "win64"):
+			os_architecture = "x64"
+	else:
+		if(("amd64" in platform.release()) or ("x64" in platform.release())):
+			os_architecture = "x64"
+	pythonversion = "Python "+sys.version[:5]+" "+"("+os_architecture+")"
+	opsysversion = platform.system()+" "+platform.release()
+	sysinfo = pythonversion+" running on "+opsysversion
+	from urllib3 import make_headers
+	headers = make_headers(keep_alive=False, user_agent="Urllib3 module for "+sysinfo)
 	if(_PROXYURL != ""):
-		import sys, platform
-		os_architecture = "x86"
-		if(platform.system() == "Windows"):
-			if(sys.platform == "win64"):
-				os_architecture = "x64"
-		else:
-			if(("amd64" in platform.release()) or ("x64" in platform.release())):
-				os_architecture = "x64"
-		pythonversion = "Python "+sys.version[:5]+" "+"("+os_architecture+")"
-		opsysversion = platform.system()+" "+platform.release()
-		sysinfo = pythonversion+" running on "+opsysversion
-
-		from urllib3 import ProxyManager, make_headers
-		headers = make_headers(keep_alive=False, user_agent="Urllib3 module for "+sysinfo)
+		from urllib3 import ProxyManager
 		_CONNECTION = urllib3.ProxyManager(proxy_url=_PROXYURL, headers=headers)
 	else:
-		_CONNECTION = urllib3.PoolManager()
+		_CONNECTION = urllib3.PoolManager(headers=headers)
 
 def setProxy(p_proxyurl):
 	# TODO: validate p_proxyurl
@@ -69,7 +69,7 @@ def setProxy(p_proxyurl):
 
 def setApiKey(p_apikey):
 	# TODO: validate p_apikey
-	global _PROXYURL
+	global _APIKEY
 	_APIKEY = p_apikey
 
 def scanUrl(p_url):
