@@ -1,8 +1,19 @@
-﻿# Original author: Lucas Soares Pellizzaro on 2018-12-20
+﻿# Original author: Lucas Soares Pellizzaro on 2018-12-11
 
 _APIKEY = ""
 _PROXYURL = ""
 _CONNECTION = None
+
+class ConnectionError(Exception):
+	"""Exception raised by connection not started properly.
+	Attributes:
+		message -- explanation of the error
+	"""
+	def __init__(self):
+		_msg1 = "A connection has not been set,"
+		_msg2 = " use 'startConnection()' to start a connection"
+		_msg3 = " and 'setProxy(proxy_url)' if you are using a proxy."
+		self.message = _msg1+_msg2+_msg3
 
 def _sendArtifact(p_baseurl, p_artifact):
 	# Starts the request
@@ -17,7 +28,7 @@ def _sendArtifact(p_baseurl, p_artifact):
 		json_raw = this_request.data.decode("utf-8")
 		func_output = {
 			"statuscode": 200,
-			"output": json.loads(json_raw)["positives"]
+			"output": json.loads(json_raw)
 		}
 	else:
 		func_output = {
@@ -30,6 +41,7 @@ def startConnection():
 	# Starts the connection
 	import urllib3
 	urllib3.disable_warnings()
+	global _CONNECTION
 	if(_PROXYURL != ""):
 		import sys, platform
 		os_architecture = "x86"
@@ -51,11 +63,13 @@ def startConnection():
 
 def setProxy(p_proxyurl):
 	# TODO: validate p_proxyurl
+	global _PROXYURL
 	_PROXYURL = p_proxyurl
 	start()
 
 def setApiKey(p_apikey):
 	# TODO: validate p_apikey
+	global _PROXYURL
 	_APIKEY = p_apikey
 
 def scanUrl(p_url):
@@ -64,8 +78,14 @@ def scanUrl(p_url):
 	Returns a dict containing 'statuscode' 
 	and 'output' with number of positives
 	"""
-	baseurl = "https://www.virustotal.com/vtapi/v2/url/report"
-	return _sendArtifact(baseurl, p_url)
+	try:
+		if(_CONNECTION == None):
+			raise ConnectionError
+		else:
+			baseurl = "https://www.virustotal.com/vtapi/v2/url/report"
+			return _sendArtifact(baseurl, p_url)
+	except ConnectionError as e:
+		print(e.message)
 
 def scanFile(p_filehash):
 	"""
@@ -74,5 +94,11 @@ def scanFile(p_filehash):
 	Returns a dict containing 'statuscode' 
 	and 'output' with number of positives
 	"""
-	baseurl = "https://www.virustotal.com/vtapi/v2/file/report"
-	return _sendArtifact(baseurl, p_filehash)
+	try:
+		if(_CONNECTION == None):
+			raise ConnectionError
+		else:
+			baseurl = "https://www.virustotal.com/vtapi/v2/file/report"
+			return _sendArtifact(baseurl, p_filehash)
+	except ConnectionError as e:
+		print(e.message)
