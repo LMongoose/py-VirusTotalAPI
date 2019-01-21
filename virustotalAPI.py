@@ -1,24 +1,27 @@
 ﻿# Original author: Lucas Soares Pellizzaro on 2018-12-11
 
-_APIKEY = ""
-_PROXYURL = ""
+import re
+
 _CONNECTION = None
+_PROXYURL = ""
+_APIKEY = ""
 
 class ConnectionError(Exception):
-	"""Exception raised by connection not started properly.
+	"""
+	Exception raised by connection not started properly.
 	Attributes:
 		message -- explanation of the error
 	"""
 	def __init__(self):
-		_msg1 = "A connection has not been set,"
-		_msg2 = " use 'startConnection()' to start a connection"
-		_msg3 = " and 'setProxy(proxy_url)' if you are using a proxy."
-		self.message = _msg1+_msg2+_msg3
+		self.msg1 = "A connection has not been set,"
+		self.msg2 = " use 'startConnection()' to start a connection"
+		self.msg3 = " and 'setProxy(proxy_url)' if you are using a proxy."
+		self.message = self.msg1+self.msg2+self.msg3
 
 def _sendArtifact(p_baseurl, p_artifact):
 	# Starts the request
 	request_params = {
-		"_APIKEY": _APIKEY,
+		"apikey": _APIKEY,
 		"resource": p_artifact
 	}
 	this_request = _CONNECTION.request("POST", url=p_baseurl, fields=request_params)
@@ -37,23 +40,13 @@ def _sendArtifact(p_baseurl, p_artifact):
 		}
 	return func_output
 
+# Public functions
 def startConnection():
-	# Starts the connection
 	import urllib3
 	urllib3.disable_warnings()
-	import sys, platform
-	os_architecture = "x86"
-	if(platform.system() == "Windows"):
-		if(sys.platform == "win64"):
-			os_architecture = "x64"
-	else:
-		if(("amd64" in platform.release()) or ("x64" in platform.release())):
-			os_architecture = "x64"
-	pythonversion = "Python "+sys.version[:5]+" "+"("+os_architecture+")"
-	opsysversion = platform.system()+" "+platform.release()
-	sysinfo = pythonversion+" running on "+opsysversion
 	from urllib3 import make_headers
-	headers = make_headers(keep_alive=False, user_agent="Urllib3 module for "+sysinfo)
+	USER_AGENT = "vtAPI/1.0 (A Python interface to the public virustotal API)"
+	headers = make_headers(keep_alive=False, user_agent=USER_AGENT)
 	global _CONNECTION
 	if(_PROXYURL != ""):
 		from urllib3 import ProxyManager
@@ -62,15 +55,20 @@ def startConnection():
 		_CONNECTION = urllib3.PoolManager(headers=headers)
 
 def setProxy(p_proxyurl):
-	# TODO: validate p_proxyurl
-	global _PROXYURL
-	_PROXYURL = p_proxyurl
-	start()
+	pattern = """(?:http|https)(?:\:\/\/)(?:[a-z]*(?:\.)?){5}(?:\:[0-9]{1,5})"""
+	if(re.match(pattern,p_proxyurl)):
+		global _PROXYURL
+		_PROXYURL = p_proxyurl
+	else:
+		print("The provided proxy url is invalid.")
 
 def setApiKey(p_apikey):
-	# TODO: validate p_apikey
-	global _APIKEY
-	_APIKEY = p_apikey
+	pattern = """[a-z0-9]{64}"""
+	if(re.match(pattern,p_apikey)):
+		global _APIKEY
+		_APIKEY = p_apikey
+	else:
+		print("The provided api key is invalid.")
 
 def scanUrl(p_url):
 	"""
@@ -89,8 +87,8 @@ def scanUrl(p_url):
 
 def scanFile(p_filehash):
 	"""
-	Sends the file hash in 'p_filehash' 
-	to virustotal (file hash must be SHA256)
+	Sends the file hash in 'p_filehash' to 
+	virustotal (file hash must be SHA256)
 	Returns a dict containing 'statuscode' 
 	and 'output' with number of positives
 	"""
@@ -102,3 +100,8 @@ def scanFile(p_filehash):
 			return _sendArtifact(baseurl, p_filehash)
 	except ConnectionError as e:
 		print(e.message)
+
+setProxy("https://nswg.corp.banrisul.com.br:9090")
+setApiKey("d0a4520d590fd1d48f324edfa30ac9d188127cc2f1c026dbdfe071e90893fc6c")
+startConnection()
+print(scanUrl("www.google.com")["output"]["positives"])
