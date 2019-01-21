@@ -56,7 +56,7 @@ def startConnection():
 
 def setProxy(p_proxyurl):
 	pattern = """(?:http|https)(?:\:\/\/)(?:[a-z]*(?:\.)?){5}(?:\:[0-9]{1,5})"""
-	if(re.match(pattern,p_proxyurl)):
+	if(re.match(pattern, p_proxyurl)):
 		global _PROXYURL
 		_PROXYURL = p_proxyurl
 	else:
@@ -64,7 +64,7 @@ def setProxy(p_proxyurl):
 
 def setApiKey(p_apikey):
 	pattern = """[a-z0-9]{64}"""
-	if(re.match(pattern,p_apikey)):
+	if(re.match(pattern, p_apikey)):
 		global _APIKEY
 		_APIKEY = p_apikey
 	else:
