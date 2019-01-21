@@ -100,8 +100,3 @@ def scanFile(p_filehash):
 			return _sendArtifact(baseurl, p_filehash)
 	except ConnectionError as e:
 		print(e.message)
-
-setProxy("https://nswg.corp.banrisul.com.br:9090")
-setApiKey("d0a4520d590fd1d48f324edfa30ac9d188127cc2f1c026dbdfe071e90893fc6c")
-startConnection()
-print(scanUrl("www.google.com")["output"]["positives"])
