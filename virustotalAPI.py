@@ -2,78 +2,127 @@
 
 import time, re
 
-# Constants
 _CONNECTION = None
 _USERAGENT = ""
-_INTERVAL = 1
-_PROXYURL = ""
+_INTERVAL = 1	# in seconds
+
+_PROXY_ENABLED = False
+_PROXY_URL = ""
+_PROXY_AUTH_ENABLED = False
+_PROXY_AUTH = ""
+
 _APIKEY = ""
 _BASE_APIURL = "https://www.virustotal.com/vtapi/v2/"
 
 # Exceptions
 class ConnectionError(Exception):
-	"""
-	Exception raised by connection not started properly.
-	Attributes:
-		message -- explanation of the error
-	"""
 	def __init__(self):
-		_msg1 = "A connection has not been set,"
-		_msg2 = " use 'startConnection()' to start a connection"
-		_msg3 = " and 'setProxy(proxy_url)' if you are using a proxy."
-		self.message = _msg1+_msg2+_msg3
+		self.message = "A connection has not been started properly."
+
+class UserAgentError(Exception):
+	def __init__(self):
+		self.message = "The user agent has not been set."
+
+class ApiKeyError(Exception):
+	def __init__(self):
+		self.message = "An api key is needed to send requests to virustotal."
 
 # Local functions
 def _sendArtifact(p_baseurl, p_artifact):
-	time.sleep(_INTERVAL)
-	# Starts the request
-	request_params = {
-		"apikey": _APIKEY,
-		"resource": p_artifact
-	}
-	this_request = _CONNECTION.request("POST", url=p_baseurl, fields=request_params)
-	# Checks the response status and returns output
-	if(str(this_request.status) == "200"):
-		import json
-		json_raw = this_request.data.decode("utf-8")
-		func_output = {
-			"statuscode": 200,
-			"output": json.loads(json_raw)
-		}
-	else:
-		func_output = {
-			"statuscode": this_request.status,
-			"output": None
-		}
-	return func_output
+	try:
+		if(_APIKEY == ""):
+			raise ApiKeyError
+		else:
+			time.sleep(_INTERVAL)
+			# Starts the request
+			request_params = {
+				"apikey": _APIKEY,
+				"resource": p_artifact
+			}
+			this_request = _CONNECTION.request("POST", url=p_baseurl, fields=request_params)
+			# Checks the response status and returns output
+			if(str(this_request.status) == "200"):
+				import json
+				json_raw = this_request.data.decode("utf-8")
+				func_output = {
+					"statuscode": 200,
+					"output": json.loads(json_raw)
+				}
+			else:
+				func_output = {
+					"statuscode": this_request.status,
+					"output": None
+				}
+			return func_output
+	except ApiKeyError as e:
+		print(e.message)
 
 # Public functions
 def startConnection():
-	import urllib3
-	urllib3.disable_warnings()
-	from urllib3 import make_headers
-	if(_USERAGENT==""):
-		print("The user agent has not been set.")
-	else:
-		headers = make_headers(keep_alive=False, user_agent=_USERAGENT)
-		global _CONNECTION
-		if(_PROXYURL != ""):
-			from urllib3 import ProxyManager
-			_CONNECTION = urllib3.ProxyManager(proxy_url=_PROXYURL, headers=headers)
+	try:
+		if(_USERAGENT==""):
+			raise UserAgentError
 		else:
-			_CONNECTION = urllib3.PoolManager(headers=headers)
+			import urllib3
+			urllib3.disable_warnings()
+			from urllib3 import make_headers
+			global _CONNECTION
+
+			# TODO: improve if logic
+			if(_PROXY_AUTH_ENABLED == True):
+				headers = make_headers(keep_alive=False, user_agent=_USERAGENT, proxy_basic_auth=_PROXY_AUTH)
+			else:
+				headers = make_headers(keep_alive=False, user_agent=_USERAGENT)
+
+			if(_PROXY_ENABLED == True):
+				from urllib3 import ProxyManager
+				_CONNECTION = urllib3.ProxyManager(proxy_url=_PROXY_URL, headers=headers)
+			else:
+				_CONNECTION = urllib3.PoolManager(headers=headers)
+	except UserAgentError as e:
+		print(e.message)
+
+def setUserAgent(p_useragent):
+	if(type(p_useragent) is str):
+		global _USERAGENT
+		_USERAGENT = p_useragent
+	else:
+		print("The provided user agent is not a string.")
 
 def setProxy(p_proxyurl):
 	pattern = """(?:http|https)(?:\:\/\/)(?:[a-z]*(?:\.)?){5}(?:\:[0-9]{1,5})"""
 	if(re.match(pattern, p_proxyurl)):
-		global _PROXYURL
-		_PROXYURL = p_proxyurl
+		global _PROXY_URL
+		_PROXY_URL = p_proxyurl
 	else:
 		print("The provided proxy url is invalid.")
 
-def setUserAgent(p_useragent):
-	global _USERAGENT
-	_USERAGENT = p_useragent
+def enableProxy():
+	global _PROXY_ENABLED
+	_PROXY_ENABLED = True
+
+def disableProxy():
+	global _PROXY_ENABLED
+	_PROXY_ENABLED = False
+
+def setProxyAuth(p_username, p_password):
+	global _PROXY_AUTH
+	_PROXY_AUTH = p_username+":"+p_password
+	
+def enableProxyAuth():
+	global _PROXY_AUTH_ENABLED
+	_PROXY_AUTH_ENABLED = True
+
+def disableProxyAuth():
+	global _PROXY_AUTH_ENABLED
+	_PROXY_AUTH_ENABLED = False
+
+def setInterval(p_interval):
+	if(type(p_interval) is float):
+		global _INTERVAL
+		_INTERVAL = p_interval
+	else:
+		print("The provided interval is not a real number.")
 
 def setApiKey(p_apikey):
 	pattern = """[a-z0-9]{64}"""
