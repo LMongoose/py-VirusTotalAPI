@@ -68,13 +68,10 @@ def startConnection():
 			from urllib3 import make_headers
 			global _CONNECTION
 
-			# TODO: improve if logic
-			if(_PROXY_AUTH_ENABLED == True):
-				headers = make_headers(keep_alive=False, user_agent=_USERAGENT, proxy_basic_auth=_PROXY_AUTH)
-			else:
-				headers = make_headers(keep_alive=False, user_agent=_USERAGENT)
-
+			headers = make_headers(keep_alive=False, user_agent=_USERAGENT)
 			if(_PROXY_ENABLED == True):
+				if(_PROXY_AUTH_ENABLED == True):
+					headers = make_headers(keep_alive=False, user_agent=_USERAGENT, proxy_basic_auth=_PROXY_AUTH)
 				from urllib3 import ProxyManager
 				_CONNECTION = urllib3.ProxyManager(proxy_url=_PROXY_URL, headers=headers)
 			else:
@@ -143,8 +140,19 @@ def scanUrl(p_url):
 		if(_CONNECTION == None):
 			raise ConnectionError
 		else:
-			baseurl = _BASE_APIURL+"url/report"
-			return _sendArtifact(baseurl, p_url)
+			filter_protocol = """(?:(?:(?:https|http|ftp|localhost|file)|(?:HTTPS|HTTP|FTP|LOCALHOST|FILE))(?:\:\/\/))"""
+			filter_prefix = """(?:[a-zA-Z0-9\-]+[.])?"""
+			filter_domain = """(?:[a-zA-Z0-9\-]+)"""
+			filter_dot = """(?:[.])"""
+			filter_suffix = """(?:[a-zA-Z0-9\-]+)"""
+			filter_geoloc = """(?:[.][a-zA-Z0-9]{2})?"""
+			filter_subdomains = """(?:(?:\/)(?:[a-zA-Z0-9\-\_\?\. ]+))*"""
+			url_regex = filter_protocol+filter_prefix+filter_domain+filter_dot+filter_suffix+filter_geoloc+filter_subdomains
+			if(not(re.match(url_regex, p_url))):
+				raise UserInputError("url")
+			else:
+				baseurl = _BASE_APIURL+"url/report"
+				return _sendArtifact(baseurl, p_url)
 	except ConnectionError as e:
 		print(e.message)
 
@@ -159,7 +167,11 @@ def scanFile(p_filehash):
 		if(_CONNECTION == None):
 			raise ConnectionError
 		else:
-			baseurl = _BASE_APIURL+"file/report"
-			return _sendArtifact(baseurl, p_filehash)
+			hash_regex = """[0123456789abcdef]{64}"""
+			if(not(re.match(hash_regex, p_account))):
+				raise UserInputError("hash")
+			else:
+				baseurl = _BASE_APIURL+"file/report"
+				return _sendArtifact(baseurl, p_filehash)
 	except ConnectionError as e:
 		print(e.message)
