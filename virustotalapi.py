@@ -1,5 +1,5 @@
 ﻿#!/usr/bin/env python
-# Original author: Lucas Soares Pellizzaro on 2019-04-30
+# Original author: LMongoose on 2019-04-30
 
 """
 Module to provide a connection to virustotal.
